@@ -1,0 +1,36 @@
+# Python-specific
+*.pyc
+*.pyo
+__pycache__/
+.pytest_cache/
+.tox/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE-specific
+*.swp
+*.bak
+*.DS_Store
+
+# Build artifacts
+build/
+dist/
+*.egg
+*.egg-info/
+
+# Test results
+.coverage
+.coverage.xml
+.nosetests.xml
+
+# Temporary files
+*#
+*.log
+*.pid
+*.tmp
+
+# Jupyter Notebook artifacts
+.ipynb_checkpoints/
