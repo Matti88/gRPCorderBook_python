@@ -1,5 +1,13 @@
 import heapq
 
+    # # Example of orders
+    # order_book.add_order(Order(1, 'buy', 100, 10))
+    # order_book.add_order(Order(2, 'sell', 101, 5))
+    # order_book.add_order(Order(3, 'buy', 102, 15))
+    # order_book.add_order(Order(4, 'sell', 98, 10))
+    # order_book.add_order(Order(5, 'sell', 100, 10))
+
+
 class Order:
     def __init__(self, order_id, order_type, price, quantity):
         self.order_id = order_id
@@ -51,23 +59,3 @@ class OrderBook:
         return (f"Buy Orders: {[order[1] for order in self.buy_orders]}\n"
                 f"Sell Orders: {[order[1] for order in self.sell_orders]}")
 
-def main():
-    order_book = OrderBook()
-
-    # Add some orders
-    order_book.add_order(Order(1, 'buy', 100, 10))
-    order_book.add_order(Order(2, 'sell', 101, 5))
-    order_book.add_order(Order(3, 'buy', 102, 15))
-    order_book.add_order(Order(4, 'sell', 98, 10))
-    order_book.add_order(Order(5, 'sell', 100, 10))
-
-    print("Order Book before matching:")
-    print(order_book)
-
-    order_book.match_orders()
-
-    print("\nOrder Book after matching:")
-    print(order_book)
-
-if __name__ == "__main__":
-    main()
