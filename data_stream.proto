@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package datastream;
+
+service DataStreamer {
+    // The server streams the data points to the client.
+    rpc StreamData(Empty) returns (stream DataPoint);
+}
+
+// Message for an empty request (used to start the stream).
+message Empty {}
+
+// Message for a data point (normal and power-law values).
+message DataPoint {
+    double normal_value = 1;
+    double power_law_value = 2;
+}
