@@ -3,13 +3,15 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Input, Button, Static, Select, RadioButton, RadioSet
 from textual.reactive import reactive
 from textual.widget import Widget
+from textual.worker import Worker
 from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
+from threading import Thread
+import random
+from time import sleep
 
-from textual_plotext import PlotextPlot  # Import the Plotext widget
-
-
+# Custom Widget to display the order book using Rich's table
 class OrderBookWidget(Widget):
     """Custom widget to display the order book using Rich's table."""
 
@@ -23,18 +25,16 @@ class OrderBookWidget(Widget):
         # Append to the appropriate side (buy or sell)
         if is_buy:
             updated_buy_orders = self.order_book["buy"] + [order_entry]
-            # Create a new dictionary to trigger reactivity
             self.order_book = {"buy": updated_buy_orders, "sell": self.order_book["sell"]}
         else:
             updated_sell_orders = self.order_book["sell"] + [order_entry]
-            # Create a new dictionary to trigger reactivity
             self.order_book = {"buy": self.order_book["buy"], "sell": updated_sell_orders}
 
     def render(self) -> Panel:
         """Render the order book as a Rich table."""
         table = Table(title="Order Book")
 
-        # Add columns to the table for displaying buy/sell orders and their type
+        # Add columns to the table for displaying buy/sell orders
         table.add_column("Buy Orders (Price x Quantity)", justify="center", style="green", no_wrap=True)
         table.add_column("Sell Orders (Price x Quantity)", justify="center", style="red", no_wrap=True)
 
@@ -53,18 +53,15 @@ class OrderBookWidget(Widget):
 
         return Panel(table)
 
-
+# Main app to manage the order book and the order entry form
 class OrderBookApp(App):
     """Main app to manage the order book and the order entry form."""
 
     def compose(self) -> ComposeResult:
-        # Custom widget for the order book (left side)
+        # Custom widget for the order book
         self.order_book_widget = OrderBookWidget(id="order_book_widget")
 
-        # Plotext widget to display a scatter plot (right side)
-        self.plotext_widget = PlotextPlot(id="plotext_widget")
-
-        # Order form (right side)
+        # Order form
         yield Horizontal(
             Vertical(
                 Static(Text("Order Book", style="bold underline")),
@@ -87,22 +84,12 @@ class OrderBookApp(App):
                 ),
                 Button("Submit Order", id="submit_order"),
                 id="order_form_container"
-            ),
-            # Add the Plotext widget in the layout for chart display
-            Vertical(
-                Static(Text("Chart of Sin Wave", style="bold underline")),
-                self.plotext_widget,
-                id="plotext_container",
-            ),
+            )
         )
 
-    def on_mount(self) -> None:
-        """Set up the plot."""
-        plt = self.query_one(PlotextPlot).plt
-        plt.title("Sine Wave Scatter Plot")
-        plt.scatter(plt.sin())
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle manual order submission."""
         if event.button.id == "submit_order":
             # Get form values
             price = self.query_one("#price_input", Input).value
@@ -115,13 +102,12 @@ class OrderBookApp(App):
                 self.bell()  # Emit a beep sound if input is missing
                 return
 
-            # Add the order to the order book via the widget
+            # Add the order to the order book
             self.order_book_widget.add_order(order_type, price, quantity, is_buy)
 
             # Clear the input fields after submission
             self.query_one("#price_input", Input).value = ""
             self.query_one("#quantity_input", Input).value = ""
-
 
 if __name__ == "__main__":
     OrderBookApp().run()

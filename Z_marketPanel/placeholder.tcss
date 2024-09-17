@@ -1,0 +1,17 @@
+Screen {
+    layout: horizontal;
+}
+
+.box {
+    padding: 2 3;
+    height: 100%;
+    width: 1fr;
+    border: solid green;
+    
+}
+.box1 {
+    height: 100%;
+    width: 2fr;
+    border: solid green;
+    padding: 2 3;
+}

@@ -9,6 +9,7 @@ __pycache__/
 venv/
 env/
 .venv/
+.vscode/
 
 # IDE-specific
 *.swp
@@ -34,3 +35,4 @@ dist/
 
 # Jupyter Notebook artifacts
 .ipynb_checkpoints/
+

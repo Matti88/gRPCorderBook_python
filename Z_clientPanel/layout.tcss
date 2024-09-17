@@ -1,0 +1,22 @@
+Header {
+    content-align: center middle;
+    height:7%;
+}
+
+
+Footer {
+    content-align: center middle;
+    height:8%;
+}
+
+#form_container {
+     margin: 2;  
+}
+
+#order_book_widget{
+     margin: 2;  
+}
+
+.container {
+     margin: 2;  
+}
