@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package ticker_service;
+
+service TickerService {
+  // Get a list of available tickers
+  rpc GetTickers(TickerRequest) returns (TickerResponse);
+
+  // Connect to a stream of market data for a specific ticker
+  rpc ConnectToMarketData(TickerRequest) returns (stream MarketData);
+
+  // Submit a limit order
+  rpc SubmitLimitOrder(LimitOrderRequest) returns (OrderResponse);
+
+  // Submit a market order
+  rpc SubmitMarketOrder(MarketOrderRequest) returns (OrderResponse);
+}
+
+// Request for getting a list of tickers
+message TickerRequest {
+  string ticker_symbol = 1; // Optional: If specified, return only tickers matching this symbol
+}
+
+// Response with a list of tickers
+message TickerResponse {
+  repeated TickerInfo tickers = 1;
+}
+
+// Information about a ticker
+message TickerInfo {
+  string symbol = 1;
+  string name = 2;
+  // Other ticker information as needed
+}
+
+// Stream of market data for a specific ticker
+message MarketData {
+  string ticker_symbol = 1;
+  double best_bid_price = 2;
+  double best_ask_price = 3;
+  int64 best_bid_quantity = 4;
+  int64 best_ask_quantity = 5;
+  double order_book_variance_max = 6;
+  double order_book_variance_min = 7;
+  int64 total_volume_quantity = 8;
+  // Other market data fields as needed
+}
+
+// Request for submitting a limit order
+message LimitOrderRequest {
+  string ticker_symbol = 1;
+  string side = 2; // "buy" or "sell"
+  double price = 3;
+  int64 quantity = 4;
+}
+
+// Request for submitting a market order
+message MarketOrderRequest {
+  string ticker_symbol = 1;
+  string side = 2; // "buy" or "sell"
+  int64 quantity = 3;
+}
+
+// Response to an order submission
+message OrderResponse {
+  string order_id = 1;
+  // Other order information as needed
+}
