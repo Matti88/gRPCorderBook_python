@@ -233,6 +233,7 @@ class TickerServiceServicer(ticker_service_pb2_grpc.TickerServiceServicer):
 
                     # Broadcast the market data to all clients
                     for client in self.clients:
+                        print("Starting broadcast for client", client)
                         await client.put(market_data)
             
             # Sleep to simulate a delay between data points

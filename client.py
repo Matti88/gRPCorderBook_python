@@ -50,12 +50,12 @@ def run():
         # 2. Submit limit order
         for i in range(5):
             print("\nSubmitting Limit Order (sell side):")
-            amount = 150 + random.choice([-1, 1]) * random.randint(1, 14)
+            amount = 150 + random.choice([-1, 1]) * random.randint(1, 2)
             submit_limit_order(stub, "GOOGL", "buy",amount , 10)
         
         for i in range(5):
             print("\nSubmitting Limit Order (sell side):")
-            amount = 150 + random.choice([-1, 1]) * random.randint(1, 25)
+            amount = 150 + random.choice([-1, 1]) * random.randint(1, 2)
             submit_limit_order(stub, "GOOGL", "sell", amount, 10)
     
         # 3. Stream market data for a given ticker
