@@ -2,7 +2,7 @@ import grpc
 import ticker_service_pb2
 import ticker_service_pb2_grpc
 import random # For random price generation
-import time
+
 
 def get_tickers(stub):
     """Get available tickers from the server."""
@@ -12,6 +12,12 @@ def get_tickers(stub):
     for ticker in response.tickers:
         print(f"{ticker.symbol}: {ticker.name}")
     return response.tickers
+
+def stream_market_data(stub, ticker_symbol):
+    """Stream market data for a specific ticker."""
+    request = ticker_service_pb2.TickerRequest(ticker_symbol=ticker_symbol)
+    for market_data in stub.ConnectToMarketData(request):
+        print(f"Market Data for {market_data.ticker_symbol}: Bid {market_data.best_bid_price} Ask {market_data.best_ask_price}")
 
 def submit_limit_order(stub, ticker_symbol, side, price, quantity):
     """Submit a limit order."""
@@ -39,22 +45,12 @@ def run():
         stub = ticker_service_pb2_grpc.TickerServiceStub(channel)
 
         # 1. Get available tickers
-        ticker_list = get_tickers(stub)
+        get_tickers(stub)
 
-        while True:
-            # 2. Generate random order for each ticker
-            for ticker in ticker_list:
-                side = random.choice(["buy", "sell"])  # Randomly choose buy or sell
-                price_offset = random.randint(1, 15)  # Random offset from 150
-                price = 150 + (price_offset if side == "buy" else -price_offset)
-                quantity = random.randint(100, 200)  # Random quantity between 100 and 200
-                print(f"\nSubmitting Limit Order ({side} side): Ticker: {ticker.symbol} Price: {price} Quantity: {quantity}")
-                submit_limit_order(stub, ticker.symbol, side, price, quantity)
+        # 3. Stream market data for a given ticker
+        print("\nStreaming Market Data for GOOGL:")
+        stream_market_data(stub, "GOOGL")
 
-            # 3. Wait for 0.5 seconds before next round
-            time.sleep(1)
 
 if __name__ == '__main__':
     run()
-
- 
