@@ -16,21 +16,19 @@ TICKERS = [
     ticker_service_pb2.TickerInfo(symbol="AMZN", name="Amazon Inc."),
 ]
 
+
 class Order:
     def __init__(self, order_id, order_type, price, symbol, name, quantity):
+        self.order_id = order_id
+        self.order_type = order_type
+        self.price = price
         self.symbol = symbol
         self.name = name
-        self.order_id = order_id
-        self.order_type = order_type  # 'buy' or 'sell'
-        self.price = price  # None for market orders
         self.quantity = quantity
 
     def __repr__(self):
         return f"Order({self.order_id}, {self.order_type}, {self.price}, {self.quantity})"
 
-    def __lt__(self, other):
-        # Define comparison for heapq: smaller order ID gets priority if prices are equal
-        return self.order_id < other.order_id
 
 class OrderBook:
     def __init__(self, symbol, name):
@@ -50,17 +48,16 @@ class OrderBook:
         Returns:
             tuple: (top_buy_orders, top_sell_orders)
         """
+        async with self.lock:
+            # Get the top N buy orders (remember to negate the price for correct max-heap behavior)
+            top_buy_orders = [(abs(price), order) for price, order in heapq.nsmallest(n, self.buy_orders, key=lambda x: x[0])]
+            
+            # Get the top N sell orders (min-heap)
+            top_sell_orders = [(price, order) for price, order in heapq.nsmallest(n, self.sell_orders, key=lambda x: x[0])]
 
-        # top_buy_orders =  self.buy_orders[0]
-        # top_sell_orders = self.sell_orders[0]
-        # return top_buy_orders, top_sell_orders
-
-        top_buy_orders = self.buy_orders[0][1] if self.buy_orders else None
-        top_sell_orders = self.sell_orders[0][1] if self.sell_orders else None
-        return top_buy_orders, top_sell_orders
+            return top_buy_orders, top_sell_orders
 
     async def add_limit_order(self, order_type, price, quantity):
-
         async with self.lock:
             if order_type not in ['buy', 'sell']:
                 raise ValueError(f"Unknown order type: {order_type}")
@@ -124,9 +121,8 @@ class OrderBook:
                 self.matched_trades.pop(0)
 
     def update_best_avg_price(self):
-        
         if self.buy_orders and self.sell_orders:
-            best_buy = -self.buy_orders[0][0]
+            best_buy = -self.buy_orders[0][0]  # Remember the price is negated in the buy heap
             best_sell = self.sell_orders[0][0]
             self.best_avg_price = (best_buy + best_sell) / 2
         else:
@@ -158,6 +154,7 @@ class OrderBook:
             self.update_best_avg_price()
 
 
+
 class TickerServiceServicer(ticker_service_pb2_grpc.TickerServiceServicer):
     def __init__(self):
         self.order_books = {ticker.symbol: OrderBook(ticker.symbol, ticker.name) for ticker in TICKERS}
@@ -187,16 +184,20 @@ class TickerServiceServicer(ticker_service_pb2_grpc.TickerServiceServicer):
             raise
 
     async def broadcast_market_data(self, ticker_symbol):
+
         order_book = self.order_books[ticker_symbol]
 
         bidOrders, askOrders = await order_book.get_top_orders(1)
         
+        if len(bidOrders) == 0 or len(askOrders) == 0:
+            return
+
         market_data = ticker_service_pb2.MarketData(
             ticker_symbol=ticker_symbol,
-            best_bid_price=bidOrders.price if bidOrders else 0,
-            best_ask_price=askOrders.price if askOrders else 0,
-            best_bid_quantity=bidOrders.quantity if bidOrders else 0,
-            best_ask_quantity=askOrders.quantity if askOrders else 0,
+            best_bid_price=bidOrders[0][1].price if bidOrders else 0,
+            best_ask_price=askOrders[0][1].price if askOrders else 0,
+            best_bid_quantity=bidOrders[0][1].quantity if bidOrders else 0,
+            best_ask_quantity=askOrders[0][1].quantity if askOrders else 0,
         )
 
         for client in self.clients:
@@ -217,10 +218,12 @@ class TickerServiceServicer(ticker_service_pb2_grpc.TickerServiceServicer):
 
         self.submission_locks[client_id] = current_time
 
+
         order_id_code = await self.order_books[request.ticker_symbol].add_limit_order(
             request.side, request.price, request.quantity)
-        await self.order_books[request.ticker_symbol].match_orders()
 
+        await self.order_books[request.ticker_symbol].match_orders()
+     
         # Trigger market data broadcast upon a new order
         await self.broadcast_market_data(request.ticker_symbol)
 
