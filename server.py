@@ -158,7 +158,7 @@ class OrderBook:
 class TickerServiceServicer(ticker_service_pb2_grpc.TickerServiceServicer):
     def __init__(self):
         self.order_books = {ticker.symbol: OrderBook(ticker.symbol, ticker.name) for ticker in TICKERS}
-        self.clients = []  # Store queues for each connected client
+        self.clients = []  # Store tuples of (queue, ticker_symbol) for each connected client
         self.submission_locks = {}  # To track rate-limiting by client
         self.rate_limit_duration = 0.5  # Time limit between submissions (in seconds)
 
@@ -172,23 +172,31 @@ class TickerServiceServicer(ticker_service_pb2_grpc.TickerServiceServicer):
         return response
 
     async def ConnectToMarketData(self, request, context):
+        """
+        Handles client connection for a specific ticker's market data.
+        The client subscribes to updates for the requested ticker_symbol.
+        """
+        ticker_symbol = request.ticker_symbol
+        print(f"Subscriber connected for ticker: {ticker_symbol}")
+
         queue = asyncio.Queue()
-        self.clients.append(queue)
+        self.clients.append((queue, ticker_symbol))  # Store both the queue and the subscribed ticker symbol
 
         try:
             while True:
                 market_data = await queue.get()
                 yield market_data
         except asyncio.CancelledError:
-            self.clients.remove(queue)
+            self.clients.remove((queue, ticker_symbol))
             raise
 
     async def broadcast_market_data(self, ticker_symbol):
-
+        """
+        Broadcasts market data updates to clients subscribed to the specific ticker_symbol.
+        """
         order_book = self.order_books[ticker_symbol]
-
         bidOrders, askOrders = await order_book.get_top_orders(1)
-        
+
         if len(bidOrders) == 0 or len(askOrders) == 0:
             return
 
@@ -200,12 +208,14 @@ class TickerServiceServicer(ticker_service_pb2_grpc.TickerServiceServicer):
             best_ask_quantity=askOrders[0][1].quantity if askOrders else 0,
         )
 
-        for client in self.clients:
-            try:
-                await client.put(market_data)
-            except asyncio.QueueFull:
-                # Handle clients unable to keep up with updates
-                self.clients.remove(client)
+        # Only broadcast to clients who subscribed to this specific ticker symbol
+        for client_queue, subscribed_ticker_symbol in self.clients:
+            if subscribed_ticker_symbol == ticker_symbol:
+                try:
+                    await client_queue.put(market_data)
+                except asyncio.QueueFull:
+                    # Handle clients unable to keep up with updates
+                    self.clients.remove((client_queue, subscribed_ticker_symbol))
 
     async def SubmitLimitOrder(self, request, context):
         # Rate limiting for client requests
@@ -217,7 +227,6 @@ class TickerServiceServicer(ticker_service_pb2_grpc.TickerServiceServicer):
             context.abort(grpc.StatusCode.RESOURCE_EXHAUSTED, "Rate limit exceeded")
 
         self.submission_locks[client_id] = current_time
-
 
         order_id_code = await self.order_books[request.ticker_symbol].add_limit_order(
             request.side, request.price, request.quantity)

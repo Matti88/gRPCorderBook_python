@@ -16,6 +16,10 @@ def get_tickers(stub):
 def stream_market_data(stub, ticker_symbol):
     """Stream market data for a specific ticker."""
     request = ticker_service_pb2.TickerRequest(ticker_symbol=ticker_symbol)
+    
+    print("subscriber connected")
+    print(request)
+
     for market_data in stub.ConnectToMarketData(request):
         print(f"Market Data for {market_data.ticker_symbol}: Bid {market_data.best_bid_price} Ask {market_data.best_ask_price}")
 
@@ -48,8 +52,8 @@ def run():
         get_tickers(stub)
 
         # 3. Stream market data for a given ticker
-        print("\nStreaming Market Data for GOOGL:")
-        stream_market_data(stub, "GOOGL")
+        print("\nStreaming Market Data for AMZN:")
+        stream_market_data(stub, "AMZN")
 
 
 if __name__ == '__main__':
