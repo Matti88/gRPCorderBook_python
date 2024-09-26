@@ -29,6 +29,18 @@ class Order:
     def __repr__(self):
         return f"Order({self.order_id}, {self.order_type}, {self.price}, {self.quantity})"
 
+    # Add comparison based on price
+    def __lt__(self, other):
+        # Orders are compared based on price
+        if not isinstance(other, Order):
+            return NotImplemented
+        return self.price < other.price
+
+    def __eq__(self, other):
+        if not isinstance(other, Order):
+            return NotImplemented
+        return self.price == other.price
+
 
 class OrderBook:
     def __init__(self, symbol, name):

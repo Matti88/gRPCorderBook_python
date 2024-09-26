@@ -48,7 +48,7 @@ def run():
                     if side == "buy":
                         price = base_price - (price_offset)  # Buy orders slightly above base
                     else:
-                        price = base_price +  (price_offset) # Sell orders slightly below base
+                        price = base_price + (price_offset) # Sell orders slightly below base
 
                     price = round(price, 0)  # Round to 2 decimal places for precision
                     quantity = 5  # Use a constant quantity for symmetry
@@ -61,25 +61,5 @@ def run():
 
 if __name__ == '__main__':
     run()
-
- 
-
-#         while True:
-#             # 2. Generate random order for each ticker
-#             for ticker in ticker_list:
-#                 side = "buy" if buy_side else "sell"  # Alternate between buy and sell
-                
-#                 # Calculate 20% of the base price as the price offset
-#                 base_price = tickers_price_map[ticker.symbol]
-#                 offset_range = base_price * 0.2
-#                 price_offset = random.uniform(0, offset_range)  # Random offset between 0 and 20% of the base price
-                
-#                 # Adjust price based on the side (buy adds the offset, sell subtracts it)
-#                 price = base_price + (price_offset if side == "buy" else -price_offset)
-#                 price = round(price, 0)  # Round to 2 decimal places
-#                 quantity = random.randint(1, 10)  # Random quantity between 1 and 10
-
-#                 print(f"\nSubmitting Limit Order ({side} side): Ticker: {ticker.symbol} Price: {price:.2f} Quantity: {quantity}")
-#                 submit_limit_order(stub, ticker.symbol, side, price, quantity)
 
  
